@@ -12,24 +12,24 @@ namespace Manticoresearch\Buddy\Plugin\CreatePlugin;
 
 use Manticoresearch\Buddy\Core\ManticoreSearch\Client as HTTPClient;
 use Manticoresearch\Buddy\Core\ManticoreSearch\Settings;
-use Manticoresearch\Buddy\Core\Plugin\Executor as BaseExecutor;
+use Manticoresearch\Buddy\Core\Plugin\BaseHandler;
 use Manticoresearch\Buddy\Core\Plugin\Pluggable;
 use Manticoresearch\Buddy\Core\Task\Task;
 use Manticoresearch\Buddy\Core\Task\TaskResult;
 use RuntimeException;
 use parallel\Runtime;
 
-final class Executor extends BaseExecutor {
+final class Handler extends BaseHandler {
   /** @var HTTPClient $manticoreClient */
 	protected HTTPClient $manticoreClient;
 
 	/**
 	 * Initialize the executor
 	 *
-	 * @param Request $request
+	 * @param Payload $payload
 	 * @return void
 	 */
-	public function __construct(public Request $request) {
+	public function __construct(public Payload $payload) {
 	}
 
   /**
@@ -45,10 +45,10 @@ final class Executor extends BaseExecutor {
 			]
 		);
 		$pluggable = new Pluggable($settings);
-		$taskFn = static function (Request $request, Pluggable $pluggable): TaskResult {
-			$package = $request->package;
-			if ($request->version) {
-				$package .= ":{$request->version}";
+		$taskFn = static function (Payload $payload, Pluggable $pluggable): TaskResult {
+			$package = $payload->package;
+			if ($payload->version) {
+				$package .= ":{$payload->version}";
 			}
 			$pluggable->install($package);
 			return new TaskResult(
@@ -62,7 +62,7 @@ final class Executor extends BaseExecutor {
 		};
 
 		return Task::createInRuntime(
-			$runtime, $taskFn, [$this->request, $pluggable]
+			$runtime, $taskFn, [$this->payload, $pluggable]
 		)->run();
 	}
 
