@@ -51,14 +51,7 @@ final class Handler extends BaseHandler {
 				$package .= ":{$payload->version}";
 			}
 			$pluggable->install($package);
-			return new TaskResult(
-				[[
-					'total' => 0,
-					'error' => '',
-					'warning' => '',
-				],
-				]
-			);
+			return TaskResult::none();
 		};
 
 		return Task::createInRuntime(
