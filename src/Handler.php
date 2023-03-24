@@ -56,7 +56,8 @@ final class Handler extends BaseHandler {
 
 		return Task::createInRuntime(
 			$runtime, $taskFn, [$this->payload, $pluggable]
-		)->run();
+		)->onSuccess(fn() => static::processHook('installed'))
+		 ->run();
 	}
 
 	/**
