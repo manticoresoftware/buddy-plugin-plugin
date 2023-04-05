@@ -8,12 +8,12 @@
   version. You should have received a copy of the GPL license along with this
   program; if you did not, you can find it at http://www.gnu.org/
 */
-namespace Manticoresearch\Buddy\Plugin\CreatePlugin;
+namespace Manticoresearch\Buddy\Plugin\Plugin;
 
 use Manticoresearch\Buddy\Core\ManticoreSearch\Client as HTTPClient;
-use Manticoresearch\Buddy\Core\ManticoreSearch\Settings;
 use Manticoresearch\Buddy\Core\Plugin\BaseHandler;
 use Manticoresearch\Buddy\Core\Plugin\Pluggable;
+use Manticoresearch\Buddy\Core\Task\Column;
 use Manticoresearch\Buddy\Core\Task\Task;
 use Manticoresearch\Buddy\Core\Task\TaskResult;
 use RuntimeException;
@@ -39,24 +39,60 @@ final class Handler extends BaseHandler {
 	 * @throws RuntimeException
 	 */
 	public function run(Runtime $runtime): Task {
-		$settings = Settings::fromArray(
-			[
-				'common.plugin_dir' => '/usr/local/lib/manticore',
-			]
-		);
-		$pluggable = new Pluggable($settings);
-		$taskFn = static function (Payload $payload, Pluggable $pluggable): TaskResult {
-			$package = $payload->package;
-			if ($payload->version) {
-				$package .= ":{$payload->version}";
+		$taskFn = static function (Payload $payload): TaskResult {
+			$settings = $payload->getSettings();
+			$pluggable = new Pluggable($settings);
+			// We do switching against name just because there is strange trouble in threaded env
+			switch ($payload->type->name) {
+				// Install new plugin
+				case 'Create':
+					$package = (string)$payload->package;
+					if ($payload->version) {
+						$package .= ":{$payload->version}";
+					}
+					$pluggable->install($package);
+					return TaskResult::none();
+
+				// Delete installed plugin
+				case 'Delete':
+					$package = (string)$payload->package;
+					$pluggable->remove($package);
+					return TaskResult::none();
+
+				// Show all installed plugins
+				case 'Show':
+					$rows = [];
+					$plugins = static::getPlugins($pluggable);
+					foreach ($plugins as $type => $list) {
+						foreach ($list as $plugin) {
+							/** @var array{full:string,short:string,version:string} $plugin */
+							$rows[] = [
+								'Package' => $plugin['full'],
+								'Plugin' => $plugin['short'],
+								'Version' => $plugin['version'],
+								'Type' => $type,
+							];
+						}
+					}
+
+					return TaskResult::withData($rows)
+						->column('Package', Column::String)
+						->column('Plugin', Column::String)
+						->column('Version', Column::String)
+						->column('Type', Column::String);
 			}
-			$pluggable->install($package);
-			return TaskResult::none();
+		};
+
+		// Define function to run on sucdessful execution
+		$successFn = match ($this->payload->type) {
+			ActionType::Create => fn() => static::processHook('installed'),
+			ActionType::Delete => fn() => static::processHook('deleted'),
+			ActionType::Show => fn() => null,
 		};
 
 		return Task::createInRuntime(
-			$runtime, $taskFn, [$this->payload, $pluggable]
-		)->onSuccess(fn() => static::processHook('installed'))
+			$runtime, $taskFn, [$this->payload]
+		)->onSuccess($successFn)
 		 ->run();
 	}
 
@@ -76,5 +112,25 @@ final class Handler extends BaseHandler {
 	public function setManticoreClient(HTTPClient $client): HTTPClient {
 		$this->manticoreClient = $client;
 		return $this->manticoreClient;
+	}
+
+	/**
+	 * @param Pluggable $pluggable
+	 * @return array{core:array<mixed>,local:array<mixed>,external:array<mixed>}
+	 */
+	protected static function getPlugins(Pluggable $pluggable): array {
+		$corePluggable = clone $pluggable;
+		// TODO: this is kind of hack and usage of function that not exposed to this space
+		$projectRoot = buddy_project_root(); // @phpstan-ignore-line
+		$corePluggable->setPluginDir($projectRoot);
+		$internalPlugins = $corePluggable->getList();
+		$localPlugins = array_filter($internalPlugins, fn ($v) => !str_starts_with($v['full'], 'manticoresoftware/'));
+		$corePlugins = array_udiff($internalPlugins, $localPlugins, fn($a, $b) => $a['full'] === $b['full'] ? 0 : 1);
+		$externalPlugins = $pluggable->getList();
+		return [
+			'core' => $corePlugins,
+			'local' => $localPlugins,
+			'external' => $externalPlugins,
+		];
 	}
 }

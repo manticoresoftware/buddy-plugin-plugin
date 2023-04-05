@@ -8,8 +8,9 @@
   version. You should have received a copy of the GPL license along with this
   program; if you did not, you can find it at http://www.gnu.org/
 */
-namespace Manticoresearch\Buddy\Plugin\CreatePlugin;
+namespace Manticoresearch\Buddy\Plugin\Plugin;
 
+use Exception;
 use Manticoresearch\Buddy\Core\Error\QueryParseError;
 use Manticoresearch\Buddy\Core\Network\Request;
 use Manticoresearch\Buddy\Core\Plugin\BasePayload;
@@ -17,7 +18,10 @@ use Manticoresearch\Buddy\Core\Plugin\BasePayload;
 final class Payload extends BasePayload {
 	public string $path;
 
-	public function __construct(public string $package, public ?string $version = null) {
+	public ?string $package;
+	public ?string $version;
+
+	public function __construct(public ActionType $type) {
 	}
 
   /**
@@ -25,16 +29,36 @@ final class Payload extends BasePayload {
 	 * @return static
 	 */
 	public static function fromRequest(Request $request): static {
-		$regex = "/^CREATE PLUGIN (\S+) TYPE 'buddy'( VERSION '(\S+)')?$/ius";
+		$self = new static(static::getActionType($request->payload));
+		switch ($self->type) {
+			// We got create plugin request
+			case ActionType::Create:
+				$regex = "/^CREATE PLUGIN (\S+) TYPE 'buddy'( VERSION '(\S+)')?$/ius";
 
-		if (!preg_match($regex, $request->payload, $matches)) {
-			throw new QueryParseError('Failed to parse query');
+				if (!preg_match($regex, $request->payload, $matches)) {
+					throw new QueryParseError('Failed to parse query');
+				}
+
+				$self->package = $matches[1];
+				$self->version = $matches[3] ?? null;
+				break;
+
+			// We got delete buddy plugin query
+			case ActionType::Delete:
+				$regex = '/^DELETE BUDDY PLUGIN (\S+)$/ius';
+
+				if (!preg_match($regex, $request->payload, $matches)) {
+					throw new QueryParseError('Failed to parse query');
+				}
+				$self->package = $matches[1];
+				break;
+
+			// We got show buddy plugins
+			case ActionType::Show:
+				// Actually we should do nothing in this case and nothing to parse from query
+				break;
 		}
 
-		$package = $matches[1];
-		$version = $matches[3] ?? null;
-
-		$self = new static($package, $version);
 		$self->path = $request->path;
 		return $self;
 	}
@@ -44,6 +68,22 @@ final class Payload extends BasePayload {
 	 * @return bool
 	 */
 	public static function hasMatch(Request $request): bool {
-		return stripos($request->payload, 'create plugin') === 0;
+		return stripos($request->payload, 'create plugin') === 0
+			|| stripos($request->payload, 'delete buddy plugin') === 0
+			|| strtolower($request->payload) === 'show buddy plugins';
+	}
+
+	/**
+	 * Helper to get ActionType enum value from the query
+	 * @param string $query
+	 * @return ActionType
+	 */
+	protected static function getActionType(string $query): ActionType {
+		return match (strtok(strtolower($query), ' ')) {
+			'create' => ActionType::Create,
+			'show' => ActionType::Show,
+			'delete' => ActionType::Delete,
+			default => throw new Exception("Failed to detect action type from query: $query"),
+		};
 	}
 }
