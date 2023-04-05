@@ -1,5 +1,5 @@
 {
-	"name": "manticoresoftware/buddy-plugin-create-plugin",
+	"name": "manticoresoftware/buddy-plugin-plugin",
 	"description": "The Buddy Create Plugin plugin",
 	"type": "library",
 	"license": "GPL-2.0-or-later",
