@@ -33,8 +33,7 @@ final class Payload extends BasePayload {
 		switch ($self->type) {
 			// We got create plugin request
 			case ActionType::Create:
-				$regex = "/^CREATE PLUGIN (\S+) TYPE 'buddy'( VERSION '(\S+)')?$/ius";
-
+				$regex = "/^CREATE (?:BUDDY )?PLUGIN (\S+)(?: TYPE 'buddy')?( VERSION '(\S+)')?$/ius";
 				if (!preg_match($regex, $request->payload, $matches)) {
 					throw new QueryParseError('Failed to parse query');
 				}
@@ -69,6 +68,7 @@ final class Payload extends BasePayload {
 	 */
 	public static function hasMatch(Request $request): bool {
 		return stripos($request->payload, 'create plugin') === 0
+			|| stripos($request->payload, 'create buddy plugin') === 0
 			|| stripos($request->payload, 'delete buddy plugin') === 0
 			|| strtolower($request->payload) === 'show buddy plugins';
 	}
