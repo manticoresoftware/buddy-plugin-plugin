@@ -92,7 +92,7 @@ final class Handler extends BaseHandler {
 
 		return Task::createInRuntime(
 			$runtime, $taskFn, [$this->payload]
-		)->onSuccess($successFn)
+		)->on('success', $successFn)
 		 ->run();
 	}
 
