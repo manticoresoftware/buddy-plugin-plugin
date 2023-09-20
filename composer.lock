@@ -712,12 +712,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/manticoresoftware/buddy-core.git",
-                "reference": "bb98e317622c8f76eab97c2d3fdfb332483310e2"
+                "reference": "0ec2ea462555d31f732939fa5ed1ebfc4c28b2b3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/manticoresoftware/buddy-core/zipball/bb98e317622c8f76eab97c2d3fdfb332483310e2",
-                "reference": "bb98e317622c8f76eab97c2d3fdfb332483310e2",
+                "url": "https://api.github.com/repos/manticoresoftware/buddy-core/zipball/0ec2ea462555d31f732939fa5ed1ebfc4c28b2b3",
+                "reference": "0ec2ea462555d31f732939fa5ed1ebfc4c28b2b3",
                 "shasum": ""
             },
             "require": {
@@ -755,7 +755,7 @@
                 "issues": "https://github.com/manticoresoftware/buddy-core/issues",
                 "source": "https://github.com/manticoresoftware/buddy-core/tree/main"
             },
-            "time": "2023-09-19T08:27:43+00:00"
+            "time": "2023-09-19T08:31:13+00:00"
         },
         {
             "name": "php-ds/php-ds",
@@ -2825,16 +2825,16 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "1.10.34",
+            "version": "1.10.35",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan.git",
-                "reference": "7f806b6f1403e6914c778140e2ba07c293cb4901"
+                "reference": "e730e5facb75ffe09dfb229795e8c01a459f26c3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/7f806b6f1403e6914c778140e2ba07c293cb4901",
-                "reference": "7f806b6f1403e6914c778140e2ba07c293cb4901",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/e730e5facb75ffe09dfb229795e8c01a459f26c3",
+                "reference": "e730e5facb75ffe09dfb229795e8c01a459f26c3",
                 "shasum": ""
             },
             "require": {
@@ -2883,7 +2883,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-09-13T09:49:47+00:00"
+            "time": "2023-09-19T15:27:56+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",

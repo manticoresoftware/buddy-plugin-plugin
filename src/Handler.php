@@ -39,7 +39,10 @@ final class Handler extends BaseHandler {
 	 * @throws RuntimeException
 	 */
 	public function run(Runtime $runtime): Task {
-		$taskFn = static function (Payload $payload): TaskResult {
+		$taskFn = static function (string $args): TaskResult {
+			/** @var Payload $payload */
+			/** @phpstan-ignore-next-line */
+			[$payload] = unserialize($args);
 			$settings = $payload->getSettings();
 			$pluggable = new Pluggable($settings);
 			// We do switching against name just because there is strange trouble in threaded env
@@ -91,7 +94,7 @@ final class Handler extends BaseHandler {
 		};
 
 		return Task::createInRuntime(
-			$runtime, $taskFn, [$this->payload]
+			$runtime, $taskFn, [serialize([$this->payload])]
 		)->on('success', $successFn)
 		 ->run();
 	}
