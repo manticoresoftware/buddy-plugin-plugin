@@ -17,7 +17,6 @@ use Manticoresearch\Buddy\Core\Task\Column;
 use Manticoresearch\Buddy\Core\Task\Task;
 use Manticoresearch\Buddy\Core\Task\TaskResult;
 use RuntimeException;
-use parallel\Runtime;
 
 final class Handler extends BaseHandler {
   /** @var HTTPClient $manticoreClient */
@@ -38,11 +37,8 @@ final class Handler extends BaseHandler {
 	 * @return Task
 	 * @throws RuntimeException
 	 */
-	public function run(Runtime $runtime): Task {
-		$taskFn = static function (string $args): TaskResult {
-			/** @var Payload $payload */
-			/** @phpstan-ignore-next-line */
-			[$payload] = unserialize($args);
+	public function run(): Task {
+		$taskFn = static function (Payload $payload): TaskResult {
 			$settings = $payload->getSettings();
 			$pluggable = new Pluggable($settings);
 			// We do switching against name just because there is strange trouble in threaded env
@@ -93,8 +89,8 @@ final class Handler extends BaseHandler {
 			ActionType::Show => fn() => null,
 		};
 
-		return Task::createInRuntime(
-			$runtime, $taskFn, [serialize([$this->payload])]
+		return Task::create(
+			$taskFn, [$this->payload]
 		)->on('success', $successFn)
 		 ->run();
 	}
